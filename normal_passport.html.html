@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online services Bhoya <> | Passport Pro Studio Suite</title>
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --accent: #ff0055;
+            --success: #00ff88;
+            --dark: #05050a;
+            --glass: rgba(20, 20, 32, 0.85);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+            --text-muted: #94a3b8;
+            --sidebar-width: 420px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background: var(--dark);
+            background-image: radial-gradient(circle at 0% 0%, #1a1a2e 0%, #05050a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            gap: 25px;
+            width: 100%;
+            max-width: 1800px;
+            height: 92vh;
+        }
+
+        /* --- SIDEBAR & VIEWS --- */
+        .sidebar {
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 25px;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        h1 { font-size: 1.4rem; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;}
+        .tagline { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        .view { display: none; flex-direction: column; }
+        .view.active { display: flex; }
+
+        /* --- BUTTONS & CONTROLS --- */
+        .upload-btn { display: block; padding: 20px; border: 2px dashed #334155; border-radius: 15px; text-align: center; cursor: pointer; margin-bottom: 25px; transition: 0.3s;}
+        .upload-btn:hover { border-color: var(--primary); background: rgba(0, 242, 254, 0.05); }
+        #file-input { display: none; }
+
+        .btn-group { display: flex; gap: 8px; margin-bottom: 20px; }
+        .btn-main { flex: 1; padding: 12px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-main:hover { background: rgba(255,255,255,0.1); }
+        .btn-main.active { background: var(--primary); color: #000; font-weight: bold; }
+
+        .btn-action { background: rgba(30, 41, 59, 0.7); color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 10px; width: 100%; font-weight: 600; margin-bottom: 15px; cursor: pointer; }
+        .btn-action:hover { background: rgba(0, 242, 254, 0.1); }
+
+        .btn-confirm { width: 100%; padding: 18px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--success), var(--primary)); color: #000; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: auto;}
+        .btn-download { width: 100%; padding: 18px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--secondary), var(--primary)); color: #000; font-weight: 800; cursor: pointer; margin-top: 15px;}
+        
+        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .section-title { font-size: 0.75rem; text-transform: uppercase; color: var(--primary); font-weight: 700; margin-bottom: 12px; }
+        
+        .control-row { margin-bottom: 12px; }
+        .label-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #cbd5e1; }
+        input[type="range"] { width: 100%; -webkit-appearance: none; height: 5px; background: #1e293b; border-radius: 3px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #fff; border-radius: 50%; cursor: pointer; border: 2px solid var(--primary); }
+
+        /* --- PREVIEW CANVAS --- */
+        .preview-pane { background: rgba(0,0,0,0.2); border-radius: 24px; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; padding: 20px;}
+        canvas { max-width: 100%; max-height: 100%; background: white; box-shadow: 0 40px 80px rgba(0,0,0,0.6); border-radius: 4px; object-fit: contain;}
+        
+        /* Preprocessing view canvas (single photo) */
+        #preprocessCanvas { max-height: 70vh; max-width: 90%; }
+
+        .status-bar { font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+        
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <h1>Online services Bhoya <></h1>
+            <p class="tagline">Passport Pro Studio Suite</p>
+
+            <label class="upload-btn">
+                <span style="font-size: 1.5rem; display: block; margin-bottom: 5px;">📂</span>
+                <span>Select New Photo</span>
+                <input type="file" id="file-input" accept="image/*">
+            </label>
+
+            <div id="preprocessView" class="view active">
+                <div class="section">
+                    <div class="section-title">A. PRE-PROCESS | Setup Image</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 15px;">Ayo, adjust the crop and zoom for *one* photo first. When you confirm, this view will be used for the whole sheet.</p>
+                    <div class="control-row">
+                        <div class="label-row"><span>Crop Zoom</span><span id="v-preZoom">1.0x</span></div>
+                        <input type="range" id="preZoom" min="0.1" max="4" step="0.1" value="1">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Pan Position</span><span id="v-prePos">0, 0</span></div>
+                        <input type="range" id="prePanX" min="-600" max="600" value="0" style="margin-bottom:8px;">
+                        <input type="range" id="prePanY" min="-600" max="600" value="0">
+                    </div>
+                </div>
+                <button class="btn-confirm" id="confirm-image-btn" disabled>Confirm Image & Continue</button>
+                <div class="status-bar" id="status-pre">Upload photo to start...</div>
+            </div>
+
+            <div id="dashboardView" class="view">
+                <div class="btn-group">
+                    <button class="btn-main active" id="preset4x2Btn">Auto 4x2 Preset (6x4 Sheet)</button>
+                    <button class="btn-main" id="manualModeBtn">Custom Mode</button>
+                </div>
+
+                <div id="presetControls" class="section">
+                    <div class="section-title">Preset Details</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">This is a standard 4x2 Landscape layout (6x4 sheet) with a fix 5px black border and extra space at the bottom for easy cutting.</p>
+                </div>
+
+                <div id="manualControls" class="section" style="display: none;">
+                    <div class="section-title">B. Manual Layout</div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Columns</span><span id="v-cols">4</span></div>
+                        <input type="range" id="cols" min="1" max="10" value="4">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Rows</span><span id="v-rows">2</span></div>
+                        <input type="range" id="rows" min="1" max="10" value="2">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Horizontal Gap</span><span id="v-marginX">20px</span></div>
+                        <input type="range" id="marginX" min="0" max="100" value="20">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Vertical Gap</span><span id="v-marginY">20px</span></div>
+                        <input type="range" id="marginY" min="0" max="100" value="20">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Custom Border</span><span id="v-borderWeight">5px</span></div>
+                        <input type="range" id="borderWeight" min="0" max="30" value="5">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">C. Per-Photo Image Processing</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">These apply to every photo on the sheet *after* the initial pre-crop.</p>
+                    <button class="btn-action" id="rotate-global-btn" style="margin-bottom: 12px;">Toggle Image Rotation (0°/90°)</button>
+                    
+                    <div class="control-row">
+                        <div class="label-row"><span>Contrast Control</span><span id="v-filterContrast">100%</span></div>
+                        <input type="range" id="filterContrast" min="50" max="150" value="100">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Lightning Control (Exposure)</span><span id="v-filterLightning">100%</span></div>
+                        <input type="range" id="filterLightning" min="50" max="150" value="100">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Color Temp (Cold/Warm)</span><span id="v-filterTemp">0</span></div>
+                        <input type="range" id="filterTemp" min="-100" max="100" value="0">
+                    </div>
+                    <div class="control-row">
+                        <div class="label-row"><span>Shadow Boost</span><span id="v-filterShadows">0%</span></div>
+                        <input type="range" id="filterShadows" min="-50" max="50" value="0">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-action" id="reset-global-btn" style="color: var(--accent); border-color: var(--accent);">🔄 Reset All Adjustments</button>
+                    <button class="btn-main" id="start-over-btn" style="background: rgba(255,255,255,0.01); color: var(--text-muted);">Pre-process Again</button>
+                </div>
+                
+                <button class="btn-download" id="download-sheet-btn">📥 Download Sheet (6x4)</button>
+                <div class="status-bar" id="status-main">Studio Mode Active</div>
+            </div>
+        </aside>
+
+        <main class="preview-pane">
+            <canvas id="mainCanvas"></canvas>
+            <canvas id="preprocessCanvas" style="display: none;"></canvas>
+        </main>
+    </div>
+
+    <script>
+        const mainCanvas = document.getElementById('mainCanvas');
+        const preprocessCanvas = document.getElementById('preprocessCanvas');
+        const mainCtx = mainCanvas.getContext('2d', {alpha: false});
+        const preCtx = preprocessCanvas.getContext('2d', {alpha: false});
+        
+        // --- LANDSCAPE DIMENSIONS (1800 x 1200 or 6x4 inches at 300dpi) ---
+        const SHEET_WIDTH = 1800;
+        const SHEET_HEIGHT = 1200;
+        mainCanvas.width = SHEET_WIDTH;
+        mainCanvas.height = SHEET_HEIGHT;
+
+        let originalImg = null;
+        
+        const state = { 
+            activeView: 'preprocess', // 'preprocess' or 'main'
+            mode: 'preset4x2', // 'preset4x2' or 'manual'
+            imageRotation: 0, // 0 or 90
+
+            // 1. Preprocessing crop/zoom values
+            cropPanX: 0, cropPanY: 0, cropZoom: 1,
+            
+            // 2. Main layout state (Custom mode defaults)
+            cols: 4, rows: 2, marginX: 20, marginY: 20, borderWeight: 5,
+            
+            // 3. Per-photo image processing filters
+            filters: { lightning: 100, contrast: 100, temp: 0, shadows: 0 }
+        };
+
+        const DOM = {
+            fileInput: document.getElementById('file-input'),
+            preprocessView: document.getElementById('preprocessView'),
+            dashboardView: document.getElementById('dashboardView'),
+            preprocessControls: document.getElementById('preprocessView'),
+            presetControls: document.getElementById('presetControls'),
+            manualControls: document.getElementById('manualControls'),
+            statusPre: document.getElementById('status-pre'),
+            statusMain: document.getElementById('status-main'),
+            downloadBtn: document.getElementById('download-sheet-btn'),
+            confirmBtn: document.getElementById('confirm-image-btn'),
+            rotateBtn: document.getElementById('rotate-global-btn')
+        };
+
+        function init() {
+            DOM.fileInput.addEventListener('change', handleUpload);
+            
+            // 1. Preprocessing listeners
+            document.querySelectorAll('#preprocessView input[type="range"]').forEach(i => i.addEventListener('input', updatePreState));
+            DOM.confirmBtn.addEventListener('click', confirmImage);
+            
+            // 2. Dashboard layout mode buttons
+            document.getElementById('preset4x2Btn').addEventListener('click', setPreset4x2);
+            document.getElementById('manualModeBtn').addEventListener('click', setManualMode);
+            
+            // 3. Main scene range input listeners
+            document.querySelectorAll('#dashboardView input[type="range"]').forEach(i => i.addEventListener('input', updateMainState));
+            
+            // 4. Action buttons
+            DOM.rotateBtn.addEventListener('click', toggleGlobalRotation);
+            document.getElementById('reset-global-btn').addEventListener('click', resetAllAdjustments);
+            document.getElementById('start-over-btn').addEventListener('click', startOverPreprocessing);
+            DOM.downloadBtn.addEventListener('click', downloadSheet);
+
+            updatePreState(); // Set initial pre-state display
+        }
+
+        // --- FILE UPLOAD ---
+        function handleUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                originalImg = new Image();
+                originalImg.onload = () => {
+                    startOverPreprocessing(); // Ensure we always go to preprocessing scene
+                    updateStatus('Photo Loaded. Ayo, adjust the pre-crop for a single photo preview.', 'success', true);
+                    DOM.confirmBtn.disabled = false;
+                };
+                originalImg.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- VIEW SWITCHING ---
+        function updateStatus(msg, type = 'info', preView = false) {
+            const color = (type === 'success') ? 'var(--success)' : (type === 'warning' ? '#ffaa00' : 'var(--text-muted)');
+            if (preView) { DOM.statusPre.innerHTML = `<span style="color:${color}">${msg}</span>`; } 
+            else { DOM.statusMain.innerHTML = `<span style="color:${color}">${msg}</span>`; }
+        }
+
+        function switchView(viewName) {
+            state.activeView = viewName;
+            if (viewName === 'preprocess') {
+                DOM.preprocessView.classList.add('active');
+                DOM.dashboardView.classList.remove('active');
+                mainCanvas.style.display = 'none';
+                preprocessCanvas.style.display = 'block';
+                DOM.statusPre.style.display = 'block';
+                DOM.statusMain.style.display = 'none';
+            } else {
+                DOM.preprocessView.classList.remove('active');
+                DOM.dashboardView.classList.add('active');
+                mainCanvas.style.display = 'block';
+                preprocessCanvas.style.display = 'none';
+                DOM.statusPre.style.display = 'none';
+                DOM.statusMain.style.display = 'block';
+            }
+        }
+
+        // --- PREPROCESSING SCENE ---
+        function updatePreState() {
+            state.cropPanX = parseInt(document.getElementById('prePanX').value);
+            state.cropPanY = parseInt(document.getElementById('prePanY').value);
+            state.cropZoom = parseFloat(document.getElementById('preZoom').value);
+
+            document.getElementById('v-preZoom').innerText = state.cropZoom.toFixed(1) + 'x';
+            document.getElementById('v-prePos').innerText = `${state.cropPanX}, ${state.cropPanY}`;
+
+            renderPreView();
+        }
+
+        function renderPreView() {
+            if (!originalImg) return;
+            
+            // Set preprocess canvas to landscape aspect of sheet, but scale it down
+            preprocessCanvas.width = 600; 
+            preprocessCanvas.height = 400;
+
+            // Clear view
+            preCtx.fillStyle = '#222';
+            preCtx.fillRect(0, 0, preprocessCanvas.width, preprocessCanvas.height);
+            preCtx.strokeStyle = 'white'; preCtx.strokeRect(0, 0, preprocessCanvas.width, preprocessCanvas.height);
+
+            preCtx.save();
+            
+            // Apply a simple grid cutting guide simulation for the preview frame
+            preCtx.fillStyle = '#111';
+            preCtx.fillRect(100, 50, 400, 300); // Inner cut-out guide
+
+            // Set clipping for the *one* preview photo slot (center)
+            preCtx.beginPath(); preCtx.rect(100, 50, 400, 300); preCtx.clip();
+
+            // Transformations centered within that slot
+            preCtx.translate(100 + 400/2, 50 + 300/2);
+            preCtx.scale(state.cropZoom, state.cropZoom);
+            preCtx.translate(state.cropPanX/3, state.cropPanY/3); // Scale down panning distance for the smaller preview canvas
+
+            // Draw image centered in the cut-out
+            const scale = Math.max(400 / originalImg.width, 300 / originalImg.height);
+            const drawW = originalImg.width * scale;
+            const drawH = originalImg.height * scale;
+            preCtx.drawImage(originalImg, -drawW/2, -drawH/2, drawW, drawH);
+
+            preCtx.restore();
+            
+            // Draw a fine border for the preview slot
+            preCtx.strokeStyle = "rgba(255,255,255,0.1)"; preCtx.lineWidth = 1; preCtx.strokeRect(100, 50, 400, 300);
+        }
+
+        function confirmImage() {
+            if (!originalImg) return;
+            switchView('main');
+            updateMainState(); // Initial main render
+        }
+
+        function startOverPreprocessing() {
+            switchView('preprocess');
+            updatePreState();
+            renderPreView();
+        }
+
+        // --- MAIN SCENE DASHBOARD ---
+        function setPreset4x2() {
+            state.mode = 'preset4x2';
+            state.cols = 4; state.rows = 2; state.borderWeight = 5; state.marginX = 20; state.marginY = 20;
+            // The 4x2 preset should have consistent spacing with *more space at the bottom*. We'll handle that via a different calculation in the render loop.
+            
+            // Spacing for 4x2 Landscape Preset (to resemble provided sample spacing):
+            // Landscape Sheet (1800x1200). 4 slots (450x600 before margins). 
+            // Total width spacing available: (1800 - 450*4) = 0.
+            // If we add margin (state.marginX=20), then actual slot available: (1800 - 40*2 - 20*3) / 4 = 1680 / 4 = 420px slot width. Content 410. Spacing 20. Side margins 40.
+            // Height total available: (1200 - 600*2) = 0. Row margin needed. Extra bottom space needed.
+            
+            // To make extra space at bottom, we'll calculate larger side/top/bottom margins:
+            // Let's use custom calculations just for this preset in the render function.
+
+            document.getElementById('preset4x2Btn').classList.add('active');
+            document.getElementById('manualModeBtn').classList.remove('active');
+            DOM.presetControls.style.display = 'block';
+            DOM.manualControls.style.display = 'none';
+            renderMain();
+        }
+
+        function setManualMode() {
+            state.mode = 'manual';
+            document.getElementById('preset4x2Btn').classList.remove('active');
+            document.getElementById('manualModeBtn').classList.add('active');
+            DOM.presetControls.style.display = 'none';
+            DOM.manualControls.style.display = 'block';
+            renderMain();
+        }
+
+        function updateMainState() {
+            // Layout (only manual values read here)
+            state.cols = parseInt(document.getElementById('cols').value);
+            state.rows = parseInt(document.getElementById('rows').value);
+            state.marginX = parseInt(document.getElementById('marginX').value);
+            state.marginY = parseInt(document.getElementById('marginY').value);
+            state.borderWeight = parseInt(document.getElementById('borderWeight').value);
+
+            // Filters
+            state.filters.contrast = parseInt(document.getElementById('filterContrast').value);
+            state.filters.lightning = parseInt(document.getElementById('filterLightning').value);
+            state.filters.temp = parseInt(document.getElementById('filterTemp').value);
+            state.filters.shadows = parseInt(document.getElementById('filterShadows').value);
+
+            // Display values
+            if (state.mode === 'manual') {
+                document.getElementById('v-cols').innerText = state.cols;
+                document.getElementById('v-rows').innerText = state.rows;
+                document.getElementById('v-marginX').innerText = state.marginX + 'px';
+                document.getElementById('v-marginY').innerText = state.marginY + 'px';
+                document.getElementById('v-borderWeight').innerText = state.borderWeight + 'px';
+            }
+
+            document.getElementById('v-filterContrast').innerText = state.filters.contrast + '%';
+            document.getElementById('v-filterLightning').innerText = state.filters.lightning + '%';
+            document.getElementById('v-filterTemp').innerText = state.filters.temp;
+            document.getElementById('v-filterShadows').innerText = state.filters.shadows + '%';
+
+            renderMain();
+        }
+
+        function toggleGlobalRotation() {
+            state.imageRotation = (state.imageRotation === 0) ? 90 : 0;
+            const deg = state.imageRotation + '°';
+            DOM.rotateBtn.innerText = `🔄 Image Rotation (${deg})`;
+            updateMainState();
+        }
+
+        function resetAllAdjustments() {
+            // Reset pre-crop (this will require going back to pre-view after confirmation if needed)
+            state.cropPanX = 0; state.cropPanY = 0; state.cropZoom = 1;
+            document.getElementById('preZoom').value = 1; document.getElementById('prePanX').value = 0; document.getElementById('prePanY').value = 0;
+
+            // Reset filters
+            state.filters = { lightning: 100, contrast: 100, temp: 0, shadows: 0 };
+            document.getElementById('filterContrast').value = 100; document.getElementById('filterLightning').value = 100; document.getElementById('filterTemp').value = 0; document.getElementById('filterShadows').value = 0;
+            
+            // Reset rotation
+            state.imageRotation = 0;
+            DOM.rotateBtn.innerText = `🔄 Global Image Rotation (0°)`;
+
+            if (originalImg) {
+                // Return to preprocessing and update states
+                updatePreState();
+                startOverPreprocessing(); 
+                updateStatus('Confirmed Image Crop Reset.', 'warning', true);
+            }
+        }
+
+        // --- RENDER MAIN CANVAS (GRID LAYOUT) ---
+        function renderMain() {
+            if (!originalImg) return;
+            mainCtx.filter = 'none';
+            mainCtx.fillStyle = "white";
+            mainCtx.fillRect(0, 0, SHEET_WIDTH, SHEET_HEIGHT);
+
+            let photoWidth, photoHeight, finalCols, finalRows, finalGapsX, finalGapsY, finalSideMargin;
+
+            // USEFUI IDEA: Separate Spacing Calculation logic for Preset vs Manual
+            if (state.mode === 'preset4x2') {
+                // Fixed Spacing for Preset (similar to provided sample layout on landscape 6x4)
+                finalCols = 4; finalRows = 2;
+                finalGapsX = 20; // Consistent horizontal gap
+                finalGapsY = 20; // Vertical gap
+                finalSideMargin = 30; // Consistent side and top margin
+                const extraBottom = 60; // EXTRA space at the bottom
+
+                // Available width for content (4 slots + 3 gaps + 2 margins)
+                const totalW = SHEET_WIDTH - (finalSideMargin * 2) - (finalGapsX * (finalCols - 1));
+                photoWidth = totalW / finalCols;
+
+                // Available height (2 slots + 1 gap + top margin + extra bottom margin)
+                const totalH = SHEET_HEIGHT - finalSideMargin - extraBottom - finalGapsY;
+                photoHeight = totalH / finalRows;
+
+            } else {
+                // Custom Manual layout logic (all user-controlled)
+                finalCols = state.cols; finalRows = state.rows;
+                finalGapsX = state.marginX; finalGapsY = state.marginY;
+                finalSideMargin = finalGapsX; // Simple model: side margin = horizontal gap
+
+                photoWidth = SHEET_WIDTH / finalCols;
+                photoHeight = SHEET_HEIGHT / finalRows;
+            }
+
+            // Loop through grid, applying shifts
+            for(let row = 0; row < finalRows; row++) {
+                for(let col = 0; col < finalCols; col++) {
+                    
+                    const dx = col * photoWidth + finalSideMargin;
+                    const dy = row * photoHeight + finalSideMargin;
+                    
+                    const pw = (state.mode === 'manual') ? (photoWidth - (finalGapsX * 2)) : (photoWidth - (finalGapsX/2 * 2)); // Slightly different gap calc per mode
+                    const ph = (state.mode === 'manual') ? (photoHeight - (finalGapsY * 2)) : (photoHeight - (finalGapsY/2 * 2));
+
+                    mainCtx.save();
+                    
+                    // APPLY CROP CLIPPING (Critical)
+                    mainCtx.beginPath(); mainCtx.rect(dx, dy, pw, ph); mainCtx.clip();
+
+                    // --- Transformations centered within the slot ---
+                    mainCtx.translate(dx + pw/2, dy + ph/2);
+
+                    // 1. APPLY 90 DEGREE ROTATION (toggle option)
+                    mainCtx.rotate(state.imageRotation * Math.PI / 180);
+
+                    // 2. APPLY PRE-CONFIRMED ZOOM & PAN
+                    mainCtx.scale(state.cropZoom, state.cropZoom);
+                    mainCtx.translate(state.cropPanX, state.cropPanY);
+
+                    // --- Advanced Image Processing ---
+                    let f = '';
+                    // Exposure (Lightning) Control via filter 'brightness'
+                    f += `brightness(${state.filters.lightning}%) `;
+                    // Contrast Control (filter)
+                    f += `contrast(${state.filters.contrast}%) `;
+                    
+                    // Shadows Control simulation: boost contrast and then lighten slightly
+                    if (state.filters.shadows > 0) {
+                        const shadowContrast = 100 + (state.filters.shadows * 0.8);
+                        const shadowBright = 100 + (state.filters.shadows * 0.3);
+                        f += `contrast(${shadowContrast}%) brightness(${shadowBright}%) `;
+                    } else if (state.filters.shadows < 0) {
+                        // For 'lowering' shadows, reduce contrast and darken mid-darks
+                        const shadowContrast = 100 + (state.filters.shadows * 1.5);
+                        f += `contrast(${shadowContrast}%) `;
+                    }
+
+                    // Color Temp simulation: blend sepia/hue-rotate
+                    if (state.filters.temp > 0) { // Warm
+                        const warmth = state.filters.temp / 100; f += `sepia(${warmth * 0.7}) `;
+                    } else if (state.filters.temp < 0) { // Cold
+                        const coldHue = state.filters.temp / 100 * -20; // Rotate generic hue to cool range
+                        const genericCoolSepia = state.filters.temp / 100 * -1; // generic blend
+                        f += `sepia(0.0) hue-rotate(${coldHue}deg) contrast(1.05) `;
+                    }
+                    
+                    mainCtx.filter = f || 'none';
+
+                    // Draw confirmed pre-processed version
+                    const scale = Math.max(pw / originalImg.width, ph / originalImg.height);
+                    const drawW = originalImg.width * scale;
+                    const drawH = originalImg.height * scale;
+                    mainCtx.drawImage(originalImg, -drawW/2, -drawH/2, drawW, drawH);
+                    
+                    mainCtx.restore();
+
+                    // APPLY THE BORDER
+                    mainCtx.filter = 'none';
+                    // User Request: Fix 5px black border only for preset mode
+                    const actualBorder = (state.mode === 'preset4x2') ? 5 : state.borderWeight;
+                    
+                    if(actualBorder > 0) {
+                        mainCtx.strokeStyle = "black"; mainCtx.lineWidth = actualBorder; mainCtx.strokeRect(dx, dy, pw, ph);
+                    } else {
+                        // Cutting guide guide for ease
+                        mainCtx.strokeStyle = "rgba(0,0,0,0.15)"; mainCtx.lineWidth = 1; mainCtx.strokeRect(dx, dy, pw, ph);
+                    }
+                }
+            }
+        }
+
+        // --- DOWNLOAD SHEET ---
+        function downloadSheet() {
+            if (!originalImg) return;
+            const link = document.createElement('a');
+            const sheetName = (state.mode === 'preset4x2') ? '4x2_Sheet' : 'Custom_Sheet';
+            link.download = `${sheetName}_OnlineServicesBhoya_${Date.now()}.png`;
+            link.href = mainCanvas.toDataURL('image/png', 1.0);
+            link.click();
+            updateStatus('Sheet Downloaded. Ayo, ready for print.', 'success');
+        }
+
+        init();
+    </script>
+</body>
+</html>
