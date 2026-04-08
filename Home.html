@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhoya Digital Hub</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d50bb;
+            --neon-pink: #ff007f;
+            --glass: rgba(15, 15, 35, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        /* Animated Galaxy Background */
+        body {
+            background: #020024;
+            background: linear-gradient(135deg, #020024 0%, #090979 35%, #00d4ff 100%);
+            background-size: 400% 400%;
+            animation: galaxyMove 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        @keyframes galaxyMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Header Styling */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 4px;
+            background: linear-gradient(to right, #fff, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            color: var(--neon-blue);
+            font-size: 0.9rem;
+            letter-spacing: 5px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        /* Navigation Grid */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 300px);
+            gap: 30px;
+            perspective: 1000px;
+        }
+
+        .nav-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 40px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 1s ease-out both;
+        }
+
+        /* Staggered entry animations */
+        .nav-card:nth-child(1) { animation-delay: 0.2s; }
+        .nav-card:nth-child(2) { animation-delay: 0.4s; }
+        .nav-card:nth-child(3) { animation-delay: 0.6s; }
+
+        .nav-card:hover {
+            transform: translateY(-15px) scale(1.05);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px var(--neon-blue);
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            transition: 0.4s;
+            border: 1px solid var(--border);
+        }
+
+        .nav-card:hover .icon-circle {
+            background: var(--neon-blue);
+            color: #000;
+            transform: rotate(360deg);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 0.85rem;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1000px) {
+            .nav-grid { grid-template-columns: 1fr; }
+            body { overflow-y: auto; padding: 50px 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>BHOYA STUDIO</h1>
+        <p class="tagline">DIGITAL SERVICES HUB</p>
+    </header>
+
+    <div class="nav-grid">
+        <a href="small_passport.html" class="nav-card">
+            <div class="icon-circle">📏</div>
+            <div>
+                <div class="card-title">Micro Sizer</div>
+                <div class="card-desc">Small size passport photos<br>Optimized for tight forms.</div>
+            </div>
+        </a>
+
+        <a href="normal_passport.html" class="nav-card">
+            <div class="icon-circle">📸</div>
+            <div>
+                <div class="card-title">Standard Studio</div>
+                <div class="card-desc">The 8-Photo 4x6 Sheet layout<br>Perfect for official use.</div>
+            </div>
+        </a>
+
+        <a href="compressor.html" class="nav-card">
+            <div class="icon-circle">💎</div>
+            <div>
+                <div class="card-title">Galaxy Compressor</div>
+                <div class="card-desc">Reduce file size instantly<br>while keeping extreme quality.</div>
+            </div>
+        </a>
+    </div>
+
+    <footer style="position: absolute; bottom: 20px; color: rgba(255,255,255,0.3); font-size: 0.7rem;">
+        &copy; 2026 Online Services Bhoya | Premium Graphics Edition
+    </footer>
+
+</body>
+</html>
